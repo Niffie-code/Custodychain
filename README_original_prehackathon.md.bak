@@ -1,0 +1,163 @@
+# CustodyChain — Track H: Media & Civic Trust
+
+A forensic evidence-integrity system: cryptographic hashing, a tamper-evident
+(hash-chained) chain of custody, and a plain-English verification report for
+non-technical stakeholders — built to the brief in `cybersecurity_hackathon.pdf`.
+
+This README maps every design decision back to that document so a judge can
+follow the thread from "Rule 05 / Rule 06" straight to the code.
+
+## What's actually proven to work, not just built
+
+Every claim below was tested against the running system, not just written
+into the code and assumed correct:
+
+- **File tampering is caught.** Uploaded a real file, verified it clean
+  (AUTHENTIC), changed one word, re-verified — the system correctly flagged
+  TAMPERED and showed both hashes.
+- **Database tampering is caught.** Edited a custody-log row directly with
+  raw SQL (bypassing the API entirely — this is Day 6's red-team task), then
+  asked the API to re-check the chain. It found the exact entry that had
+  been altered and the judicial report correctly flipped to
+  "INTEGRITY COMPROMISED."
+- **The frontend actually talks to the backend.** A headless integration
+  test (`frontend/test_frontend.mjs`) drives the real UI — upload, verify
+  clean, verify tampered, pull the judicial report — against the live API
+  and checks the rendered output, not just that requests were sent.
+
+## Architecture
+
+```
+backend/           FastAPI + SQLite — the cryptographic core
+  app/hashing.py      chunked SHA-256/BLAKE2b, hash-chain logic, Merkle tree
+  app/database.py     SQLite schema (evidence + custody_log tables)
+  app/metadata.py     read-only ExifTool metadata extraction
+  app/main.py         API endpoints
+  seed_demo_data.py   Faker-generated synthetic evidence (no real data)
+
+frontend/           Static HTML/CSS/JS — no build step
+  index.html          two views: Field Officer console + Judicial report
+  app.js              upload / verify / offline-queue / report rendering
+  test_frontend.mjs   headless integration test (see above)
+
+demo/custodychain_demo.html
+  A single self-contained file with no backend at all — the same two
+  views, but hashing happens with the browser's own Web Crypto API and
+  the custody log is kept in the file's own storage. Open it directly
+  in any browser to try the whole flow (upload, verify, tamper, red-team)
+  with zero setup. Useful for a pitch laptop with no Wi-Fi in the room.
+
+public/            Public landing page + self serve verify flow for
+                     journalists, fact checkers, and citizens — added
+                     later, strictly as new code on top of the backend
+                     above. See public/README.md for the full account of
+                     what was and wasn't touched to build it, including
+                     two real bugs found and fixed during testing (a
+                     text-diff granularity bug and an image-message
+                     miscalibration) and one spec edge case that doesn't
+                     map cleanly onto this design.
+```
+
+No npm build, no bundler, for the frontend — see "Honest limits" for why.
+
+## How the brief maps to this build
+
+| Brief item | Where it lives |
+|---|---|
+| Data Integrity, Non-Repudiation, Chain of Custody | `hashing.py` — SHA-256 + BLAKE2b digest, hash-chained log |
+| Rule 05 (Honest Limits) | See below |
+| Rule 06 (Offline First) | `app.js` offline queue + `POST /sync/offline-queue` |
+| Chunked hashing for huge files | `hashing.hash_and_save_upload` reads in 8 MiB chunks, never buffers a whole file |
+| Hash-chained audit log | `_append_custody_entry` — each entry embeds the previous entry's hash |
+| ExifTool metadata | `app/metadata.py`, read-only, never writes to the evidence file |
+| Merkle tree | `hashing.merkle_root` / `GET /merkle/root` |
+| Faker synthetic data | `seed_demo_data.py` |
+| Officer Field Interface | `index.html` "Field officer" view |
+| Judicial / Panel View | `index.html` "Judicial review" view — plain-English status, timeline |
+| Red-team day (Day 6) | See "Live demo script" below |
+
+## Running it
+
+**Backend:**
+```bash
+cd backend
+pip install -r requirements.txt --break-system-packages   # or use a venv
+python seed_demo_data.py      # optional: loads synthetic demo cases
+uvicorn app.main:app --reload --port 8000
+```
+
+**Frontend** (needs a static server, not `file://`, so `fetch()` isn't
+blocked by the browser's file-origin restrictions):
+```bash
+cd frontend
+python3 -m http.server 5500
+# open http://127.0.0.1:5500
+```
+
+If your API isn't on `127.0.0.1:8000`, set it before the page loads:
+```html
+<script>window.CUSTODYCHAIN_API = "http://your-host:8000";</script>
+```
+
+**Optional — re-run the integration test:**
+```bash
+cd frontend
+npm install        # installs jsdom, dev-only
+npm test           # drives the real UI against your running backend
+```
+
+## Live demo script (Day 7 pitch, as written in the brief)
+
+1. Open the **Field officer** view. Fill in a case ID and upload any file —
+   watch the hash appear in the ledger instantly.
+2. Turn off your Wi-Fi. Upload another file — the app hashes it locally
+   with `crypto.subtle.digest` and queues it (Rule 06). Turn Wi-Fi back on;
+   it syncs automatically.
+3. Copy the evidence ID from the ledger. In a terminal, flip one byte of
+   the same file you uploaded, then use the **"Compare against original"**
+   form with the modified file. Watch the verdict flip to **TAMPERED**.
+4. Switch to the **Judicial review** view, paste the evidence ID. The seal
+   badge renders visibly cracked and the report explains *why* in plain
+   language — no hash talk required.
+5. For the red-team flourish: open `backend/custodychain.db` with any
+   SQLite tool and edit a `custody_log` row directly (bypassing the app).
+   Reload the judicial report — it now reads "INTEGRITY COMPROMISED" and
+   names the exact tampered entry.
+
+## Honest limits (Rule 05)
+
+Being upfront about what this system does and doesn't guarantee:
+
+- **SHA-256 collision resistance vs. disk I/O speed.** SHA-256 is
+  computationally collision-resistant for the foreseeable future, but on
+  very large files (100+ GB) the bottleneck in practice is disk read
+  throughput, not the hash function — chunked reading bounds RAM use, not
+  wall-clock time.
+- **The hash chain proves the log wasn't edited after the fact — it
+  doesn't prove the first entry was honest.** If an officer hashes a file
+  *after* already tampering with it in the field, the chain will faithfully
+  record that (wrong) hash as ground truth. This system detects tampering
+  *after* collection; it can't detect tampering that happens *before* the
+  first hash is taken. Provenance at the point of capture (e.g. a bodycam
+  with hardware-level signing) is a separate, harder problem this project
+  doesn't attempt to solve.
+- **CORS is wide open (`allow_origins=["*"]`)** for demo convenience. A
+  real deployment would restrict this to the actual officer/judicial
+  frontend origins.
+- **No authentication/authorization layer.** Anyone who can reach the API
+  can upload evidence or add custody events. A production system needs
+  officer/judge identity verified independently of whatever name they type
+  into a form field — right now `actor` and `officer_name` are trusted
+  input, not verified identity.
+- **Offline sync trusts the client-computed hash.** When a device syncs
+  hashes computed while offline, the server has no way to confirm those
+  bytes weren't altered between hashing and syncing, beyond the device's
+  own integrity. This mirrors real evidence-handling: trust ultimately
+  traces back to the collecting officer at some point, and the system is
+  explicit about where that trust boundary sits rather than pretending it
+  doesn't exist.
+- **No build step for the frontend, on purpose.** The brief suggests
+  React; this ships as plain HTML/CSS/JS instead so a judge can open it
+  and read exactly what's running without a bundler in the way. The same
+  logic would port to a React component tree with no change to the API
+  contract.

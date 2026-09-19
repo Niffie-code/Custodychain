@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CustodyChain. Seal an exhibit.</title>
+  <meta name="description" content="Seal a file at the moment it is collected, and open its chain of custody.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="verify.css">
+  <link rel="stylesheet" href="custody.css">
+</head>
+
+<body>
+
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo" style="text-decoration:none;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L20 6V11C20 16 16.5 20.2 12 22C7.5 20.2 4 16 4 11V6L12 2Z" stroke="#3654FF" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12L11 14.5L15.5 9.5" stroke="#3654FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      CustodyChain
+    </a>
+    <div class="nav__links">
+      <a href="seal.html">Seal an exhibit</a>
+      <a href="exhibits.html">Exhibits</a>
+      <a href="verify.html">Check a copy</a>
+    </div>
+  </div>
+</nav>
+
+<main class="app-shell">
+  <div class="app-header">
+    <h1>Seal an exhibit</h1>
+    <p>Record a file at the moment it is collected. From then on, any change to it can be proved.</p>
+  </div>
+
+  <div id="globalError" class="error-banner" style="display:none;" role="alert">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8V13M12 16.5V16.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span id="globalErrorText"></span>
+  </div>
+
+  <!-- STATE: form -->
+  <section id="state-form" class="state is-active">
+    <div class="dropzones" style="grid-template-columns: 1fr;">
+      <div class="dropzone" id="dropExhibit" tabindex="0" role="button" aria-label="Add the file to seal">
+        <span class="dropzone__label">The file</span>
+        <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none"><path d="M12 15V3M12 3L7 8M12 3L17 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15V17.5C4 18.9 5.1 20 6.5 20H17.5C18.9 20 20 18.9 20 17.5V15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="dropzone__text">Drop the file here, or click to browse</div>
+        <div class="dropzone__hint">The file exactly as it was collected</div>
+        <input type="file" id="fileExhibit" aria-hidden="true">
+      </div>
+    </div>
+    <p class="field-error" id="errorExhibit"></p>
+
+    <div class="panel" style="margin-top: 24px;">
+      <div class="panel__head">
+        <div>
+          <div class="panel__title">Collection details</div>
+          <p class="panel__sub">These become the first entry in the custody trail.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" for="caseId">Case ID</label>
+          <input type="text" id="caseId" placeholder="CASE-2026-014" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="field__label" for="exhibitId">Exhibit ID</label>
+          <input type="text" id="exhibitId" placeholder="Leave blank and we will create one" autocomplete="off">
+          <span class="field__hint">Format CC-YYYY-#####</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="collectedBy">Collected by</label>
+          <input type="text" id="collectedBy" placeholder="Full name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="field__label" for="collectedRole">Their role</label>
+          <select id="collectedRole">
+            <option>Collecting officer</option>
+            <option>Analyst</option>
+            <option>Counsel</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="collectedPlace">Place collected</label>
+          <input type="text" id="collectedPlace" placeholder="Where the file was taken from" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="field__label" for="collectedAt">Date and time collected</label>
+          <input type="datetime-local" id="collectedAt">
+        </div>
+
+        <div class="field field--full">
+          <label class="field__label" for="description">Short description</label>
+          <textarea id="description" placeholder="What this file is, in one or two lines"></textarea>
+        </div>
+      </div>
+
+      <div class="info-note" style="margin-top: 20px;">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 11V16M12 8V8.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <div>
+          <strong>Offline kit.</strong> Sealing works without internet. If power or network
+          drops after the seal is written, the log stays on this machine and can sync later.
+        </div>
+      </div>
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn btn--primary btn--lg" id="sealBtn" disabled>Seal this exhibit</button>
+      <p class="upload-hint" id="sealHint">Add a file and a case ID to continue.</p>
+    </div>
+
+    <p class="limit-note">
+      This system proves the file was not changed after it was sealed at collection.
+      It does not prove the file was true before collection.
+    </p>
+  </section>
+
+  <!-- STATE: processing -->
+  <section id="state-processing" class="state">
+    <div class="processing">
+      <div class="processing__steps">
+        <div class="processing__step" data-step="1"><span class="processing__dot"></span><span class="processing__label">Reading the file</span></div>
+        <div class="processing__step" data-step="2"><span class="processing__dot"></span><span class="processing__label">Creating the seal</span></div>
+        <div class="processing__step" data-step="3"><span class="processing__dot"></span><span class="processing__label">Opening the custody trail</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATE: done -->
+  <section id="state-done" class="state">
+    <div class="verdict-banner verdict-banner--verified">
+      <div class="verdict-banner__icon">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L20 6V11C20 16 16.5 20.2 12 22C7.5 20.2 4 16 4 11V6L12 2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12L11 14.5L15.5 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <h2>Exhibit sealed</h2>
+        <p id="doneSubtitle"></p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="seal-number__label">Seal number</div>
+      <div class="seal-number" id="doneSeal"></div>
+      <p class="seal-caption">Seal produced using SHA-256. If one character of the file changes, this seal changes completely.</p>
+    </div>
+
+    <div class="result-actions">
+      <a class="btn btn--primary" id="viewExhibitBtn" href="#">Open this exhibit</a>
+      <button class="btn btn--secondary" id="sealAnotherBtn">Seal another exhibit</button>
+    </div>
+  </section>
+</main>
+
+<script>
+  window.CUSTODYCHAIN_API = window.CUSTODYCHAIN_API || "http://127.0.0.1:8000";
+</script>
+<script src="custody.js"></script>
+<script src="seal.js"></script>
+</body>
+</html>

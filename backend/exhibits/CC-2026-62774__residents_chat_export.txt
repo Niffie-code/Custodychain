@@ -1,0 +1,11 @@
+CHAT EXPORT (SYNTHETIC - NOT REAL PEOPLE)
+Group: Ward 6 residents
+
+[2026-01-04 18:02] Resident A: The water has been off since Friday.
+[2026-01-04 18:05] Resident B: Same on our street. Any notice posted?
+[2026-01-04 18:09] Resident A: There is a notice on the board now.
+[2026-01-04 18:11] Resident C: I took a photo of it, sending now.
+[2026-01-04 18:14] Resident B: That says fourteen days.
+[2026-01-04 18:20] Resident A: We should keep a copy of the original.
+
+-- end of export --

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>CustodyChain. Verify a file.</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="styles.css">
+      <link rel="stylesheet" href="verify.css">
+      <link rel="stylesheet" href="custody.css">
+    </head>
+
+  <body>
+
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo" style="text-decoration:none;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L20 6V11C20 16 16.5 20.2 12 22C7.5 20.2 4 16 4 11V6L12 2Z" stroke="#3654FF" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12L11 14.5L15.5 9.5" stroke="#3654FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      CustodyChain
+    </a>
+    <div class="nav__links">
+      <a href="seal.html">Seal an exhibit</a>
+      <a href="exhibits.html">Exhibits</a>
+      <a href="index.html">Back to home</a>
+    </div>
+  </div>
+</nav>
+
+<main class="app-shell">
+  <div class="app-header">
+    <h1>Check whether a file has been changed</h1>
+    <p>Add the original file you trust, and the file you want to check against it.</p>
+  </div>
+
+  <div id="globalError" class="error-banner" style="display:none;" role="alert">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8V13M12 16.5V16.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span id="globalErrorText"></span>
+  </div>
+
+  <!-- STATE: upload -->
+  <section id="state-upload" class="state is-active">
+    <div style="text-align:center;">
+      <div class="mode-toggle" role="tablist" aria-label="What would you like to check?">
+        <button class="mode-toggle__btn is-selected" id="modeAdhocBtn" type="button" role="tab" aria-selected="true">Compare two files</button>
+        <button class="mode-toggle__btn" id="modeSealedBtn" type="button" role="tab" aria-selected="false">Check against a sealed exhibit</button>
+      </div>
+    </div>
+
+    <!-- MODE 2: check a copy against a sealed exhibit -->
+    <div id="sealedMode" style="display:none;">
+      <div class="panel">
+        <div class="panel__head">
+          <div>
+            <div class="panel__title">Check a copy against a sealed exhibit</div>
+            <p class="panel__sub">Pick the exhibit this file is supposed to be, and we will compare it to the seal taken at collection.</p>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="sealedExhibit">Exhibit</label>
+          <select id="sealedExhibit">
+            <option value="">Loading exhibits…</option>
+          </select>
+          <span class="field__hint">Not listed? <a href="seal.html">Seal it first.</a></span>
+        </div>
+      </div>
+
+      <div class="dropzones" style="grid-template-columns: 1fr;">
+        <div class="dropzone" id="dropSealedCopy" tabindex="0" role="button" aria-label="Add the copy to check">
+          <span class="dropzone__label">The circulating copy</span>
+          <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none"><path d="M12 15V3M12 3L7 8M12 3L17 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15V17.5C4 18.9 5.1 20 6.5 20H17.5C18.9 20 20 18.9 20 17.5V15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="dropzone__text">Drop the copy here, or click to browse</div>
+          <div class="dropzone__hint">The version you want to check</div>
+          <input type="file" id="fileSealedCopy" aria-hidden="true">
+        </div>
+      </div>
+      <p class="field-error" id="errorSealedCopy"></p>
+
+      <div class="upload-actions">
+        <button class="btn btn--primary btn--lg" id="sealedSubmitBtn" disabled>Check against the seal</button>
+        <p class="upload-hint" id="sealedHint">Pick an exhibit and add the copy to check.</p>
+      </div>
+
+      <div id="sealedResult"></div>
+
+      <p class="limit-note">
+        This system proves the file was not changed after it was sealed at collection.
+        It does not prove the file was true before collection.
+      </p>
+    </div>
+
+    <!-- MODE 1: the original two-file compare, unchanged -->
+    <div id="adhocMode">
+    <div class="dropzones">
+      <div class="dropzone" id="dropOriginal" tabindex="0" role="button" aria-label="Add the original file">
+        <span class="dropzone__label">Original file</span>
+        <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none"><path d="M12 15V3M12 3L7 8M12 3L17 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15V17.5C4 18.9 5.1 20 6.5 20H17.5C18.9 20 20 18.9 20 17.5V15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="dropzone__text">Drop the original here, or click to browse</div>
+        <div class="dropzone__hint">The version you trust</div>
+        <input type="file" id="fileOriginal" aria-hidden="true">
+      </div>
+      <div class="dropzone" id="dropCompare" tabindex="0" role="button" aria-label="Add the file to check">
+        <span class="dropzone__label">File to check</span>
+        <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none"><path d="M12 15V3M12 3L7 8M12 3L17 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15V17.5C4 18.9 5.1 20 6.5 20H17.5C18.9 20 20 18.9 20 17.5V15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="dropzone__text">Drop a file here, or click to browse</div>
+        <div class="dropzone__hint">The version you want to check</div>
+        <input type="file" id="fileCompare" aria-hidden="true">
+      </div>
+    </div>
+    <p class="field-error" id="errorOriginal"></p>
+    <p class="field-error" id="errorCompare"></p>
+    <p class="accepted-types">Accepts documents, images, video, and audio, up to 50 MB each.</p>
+    <div class="upload-actions">
+      <button class="btn btn--primary btn--lg" id="submitBtn" disabled>Compare files</button>
+      <p class="upload-hint" id="uploadHint">Add both files above to compare them.</p>
+    </div>
+    </div><!-- /#adhocMode -->
+  </section>
+
+  <!-- STATE: processing -->
+  <section id="state-processing" class="state">
+    <div class="processing">
+      <div class="processing__steps">
+        <div class="processing__step" data-step="1"><span class="processing__dot"></span><span class="processing__label">Generating fingerprints</span></div>
+        <div class="processing__step" data-step="2"><span class="processing__dot"></span><span class="processing__label">Comparing files</span></div>
+        <div class="processing__step" data-step="3"><span class="processing__dot"></span><span class="processing__label">Analyzing differences</span></div>
+        <div class="processing__step" data-step="4"><span class="processing__dot"></span><span class="processing__label">Preparing your result</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATE: result -->
+  <section id="state-result" class="state">
+    <div id="verdictBanner" class="verdict-banner">
+      <div class="verdict-banner__icon">
+        <svg id="verdictIcon" viewBox="0 0 24 24" fill="none"></svg>
+      </div>
+      <div>
+        <h2 id="verdictTitle"></h2>
+        <p id="verdictSubtitle"></p>
+      </div>
+    </div>
+
+    <div class="result-top">
+      <div class="score-ring">
+        <svg viewBox="0 0 100 100">
+          <circle class="score-ring__bg" cx="50" cy="50" r="42"></circle>
+          <circle class="score-ring__fill" id="scoreRingFill" cx="50" cy="50" r="42"></circle>
+        </svg>
+        <div class="score-ring__label" id="scoreRingLabel"></div>
+      </div>
+      <p class="result-explanation" id="resultExplanation"></p>
+    </div>
+
+    <div id="diffContainer"></div>
+
+    <div class="tech-details" id="techDetails">
+      <button class="tech-details__toggle" id="techDetailsToggle" type="button">
+        Technical details
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="tech-details__body">
+        <div class="tech-details__row">
+          <div class="tech-details__row-label">Original file fingerprint, SHA 256</div>
+          <div id="hashOriginal"></div>
+        </div>
+        <div class="tech-details__row">
+          <div class="tech-details__row-label">Checked file fingerprint, SHA 256</div>
+          <div id="hashCompare"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn--primary" id="downloadReportBtn">Download report</button>
+      <button class="btn btn--secondary" id="startOverBtn">Check another file</button>
+    </div>
+  </section>
+</main>
+
+      <script>
+        window.CUSTODYCHAIN_API = window.CUSTODYCHAIN_API || "http://127.0.0.1:8000";
+      </script>
+  
+  <script src="app.js"></script>
+  <script src="custody.js"></script>
+  <script src="verify-sealed.js"></script>
+
+  </body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CustodyChain. Exhibits.</title>
+  <meta name="description" content="Search sealed exhibits by case or exhibit ID.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="verify.css">
+  <link rel="stylesheet" href="custody.css">
+</head>
+
+<body>
+
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo" style="text-decoration:none;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L20 6V11C20 16 16.5 20.2 12 22C7.5 20.2 4 16 4 11V6L12 2Z" stroke="#3654FF" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12L11 14.5L15.5 9.5" stroke="#3654FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      CustodyChain
+    </a>
+    <div class="nav__links">
+      <a href="seal.html">Seal an exhibit</a>
+      <a href="exhibits.html">Exhibits</a>
+      <a href="verify.html">Check a copy</a>
+    </div>
+  </div>
+</nav>
+
+<main class="app-shell">
+  <div class="app-header">
+    <h1>Exhibits</h1>
+    <p>Every file sealed in this locker, and the state of its custody trail.</p>
+  </div>
+
+  <div id="globalError" class="error-banner" style="display:none;" role="alert">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8V13M12 16.5V16.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span id="globalErrorText"></span>
+  </div>
+
+  <div class="toolbar">
+    <div class="field">
+      <input type="text" id="searchInput" placeholder="Search by case ID, exhibit ID, or description" autocomplete="off">
+    </div>
+    <a class="btn btn--primary" href="seal.html">Seal an exhibit</a>
+  </div>
+
+  <div id="listContainer">
+    <p class="loading-note">Loading exhibits…</p>
+  </div>
+
+  <div class="panel" style="margin-top: 32px;">
+    <div class="panel__head">
+      <div>
+        <div class="panel__title">Offline kit</div>
+        <p class="panel__sub">Move records between machines when the network is down.</p>
+      </div>
+    </div>
+    <div class="demo-actions">
+      <button class="btn btn--secondary" id="exportBtn">Export records</button>
+      <button class="btn btn--secondary" id="importBtn">Import records</button>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none;">
+    </div>
+    <p class="seal-caption" id="syncNote" style="margin-top: 12px;">
+      Export downloads every exhibit and custody entry as a file. Importing merges
+      entries back in without breaking their order, and skips anything already held.
+    </p>
+  </div>
+</main>
+
+<script>
+  window.CUSTODYCHAIN_API = window.CUSTODYCHAIN_API || "http://127.0.0.1:8000";
+</script>
+<script src="custody.js"></script>
+<script src="exhibits.js"></script>
+</body>
+</html>

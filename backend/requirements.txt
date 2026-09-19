@@ -1,0 +1,14 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+Faker>=24.0
+pydantic>=2.0
+
+# Added for the public verify flow (analysis.py, report_pdf.py) — not
+# required by the original evidence upload/verify/custody endpoints.
+Pillow>=10.0
+reportlab>=4.0
+
+# Chain-of-custody product (custody.py, custody_routes.py, court report).
+# No new third-party dependency: sealing uses hashlib from the standard
+# library, and the court report reuses reportlab, already listed above.

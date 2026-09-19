@@ -1,0 +1,13 @@
+{
+  "name": "custodychain-public-verify",
+  "version": "1.0.0",
+  "description": "CustodyChain public verify flow — landing page and file comparison tool. Static site, no build step to run it.",
+  "private": true,
+  "scripts": {
+    "test": "node test_verify_flow.mjs",
+    "serve": "python3 -m http.server 5500"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1"
+  }
+}

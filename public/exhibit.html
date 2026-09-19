@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CustodyChain. Exhibit.</title>
+  <meta name="description" content="An exhibit, its seal, and everyone who has held it.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="verify.css">
+  <link rel="stylesheet" href="custody.css">
+</head>
+
+<body>
+
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo" style="text-decoration:none;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L20 6V11C20 16 16.5 20.2 12 22C7.5 20.2 4 16 4 11V6L12 2Z" stroke="#3654FF" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12L11 14.5L15.5 9.5" stroke="#3654FF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      CustodyChain
+    </a>
+    <div class="nav__links">
+      <a href="seal.html">Seal an exhibit</a>
+      <a href="exhibits.html">Exhibits</a>
+      <a href="verify.html">Check a copy</a>
+    </div>
+  </div>
+</nav>
+
+<main class="app-shell">
+  <div id="globalError" class="error-banner" style="display:none;" role="alert">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8V13M12 16.5V16.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span id="globalErrorText"></span>
+  </div>
+
+  <p class="loading-note" id="loadingNote">Loading exhibit…</p>
+
+  <div id="detailRoot" style="display:none;">
+    <div class="app-header" style="text-align:left;">
+      <p class="eyebrow" id="exhibitCase"></p>
+      <h1 id="exhibitTitle"></h1>
+      <p id="exhibitDescription"></p>
+      <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span id="chipChain"></span>
+        <span id="chipCheck"></span>
+      </div>
+    </div>
+
+    <!-- Broken chain banner: existing red error treatment, no new colour -->
+    <div id="chainBrokenBanner" class="error-banner" style="display:none;" role="alert">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3L22 20H2L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10V14.5M12 17V17.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span>
+        <strong>This custody trail has been broken.</strong>
+        <span id="chainBrokenReason"></span>
+      </span>
+    </div>
+
+    <!-- Seal + metadata -->
+    <div class="panel">
+      <div class="seal-number__label">Seal number</div>
+      <div class="seal-number" id="sealNumber"></div>
+      <p class="seal-caption">Seal produced using SHA-256. If one character of the file changes, this seal changes completely.</p>
+
+      <div class="detail-grid" style="margin-top: 24px;">
+        <div class="detail-item">
+          <div class="detail-item__label">Exhibit ID</div>
+          <div class="detail-item__value" id="metaExhibitId"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item__label">Case ID</div>
+          <div class="detail-item__value" id="metaCaseId"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item__label">File name</div>
+          <div class="detail-item__value" id="metaFilename"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item__label">File size</div>
+          <div class="detail-item__value" id="metaFilesize"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item__label">Collected by</div>
+          <div class="detail-item__value" id="metaCollectedBy"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item__label">Place collected</div>
+          <div class="detail-item__value" id="metaPlace"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item__label">Time collected</div>
+          <div class="detail-item__value" id="metaCollectedAt"></div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-item__label">Custody entries</div>
+          <div class="detail-item__value" id="metaEventCount"></div>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <a class="btn btn--primary" id="reportBtn" href="#">Download court report</a>
+        <a class="btn btn--secondary" href="exhibits.html">Back to exhibits</a>
+      </div>
+    </div>
+
+    <!-- Custody trail -->
+    <div class="panel">
+      <div class="panel__head">
+        <div>
+          <div class="panel__title">Chain of custody</div>
+          <p class="panel__sub">Everyone who held this exhibit, and what they did.</p>
+        </div>
+      </div>
+      <div class="trail" id="trail"></div>
+    </div>
+
+    <!-- Record a handoff -->
+    <div class="panel">
+      <div class="panel__head">
+        <div>
+          <div class="panel__title">Record a handoff or action</div>
+          <p class="panel__sub">Each entry is sealed to the one before it, so the order cannot be changed later.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field__label" for="eventActor">Who</label>
+          <input type="text" id="eventActor" placeholder="Full name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="field__label" for="eventRole">Their role</label>
+          <select id="eventRole">
+            <option>Collecting officer</option>
+            <option>Analyst</option>
+            <option>Counsel</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="eventAction">What they did</label>
+          <select id="eventAction"></select>
+        </div>
+        <div class="field">
+          <label class="field__label" for="eventWhen">When</label>
+          <input type="datetime-local" id="eventWhen">
+        </div>
+
+        <div class="field" id="fieldFrom" style="display:none;">
+          <label class="field__label" for="eventFrom">From person</label>
+          <input type="text" id="eventFrom" placeholder="Who handed it over" autocomplete="off">
+        </div>
+        <div class="field" id="fieldTo" style="display:none;">
+          <label class="field__label" for="eventTo">To person</label>
+          <input type="text" id="eventTo" placeholder="Who received it" autocomplete="off">
+        </div>
+
+        <div class="field field--full">
+          <label class="field__label" for="eventNote">Note</label>
+          <textarea id="eventNote" placeholder="Optional"></textarea>
+        </div>
+      </div>
+
+      <p class="field-error" id="eventError"></p>
+      <div class="result-actions">
+        <button class="btn btn--primary" id="addEventBtn">Add to the trail</button>
+      </div>
+    </div>
+
+    <!-- Check a copy -->
+    <div class="panel">
+      <div class="panel__head">
+        <div>
+          <div class="panel__title">Check a copy against this seal</div>
+          <p class="panel__sub">Upload a circulating copy and we will say whether it is still the sealed file.</p>
+        </div>
+      </div>
+
+      <div class="dropzones" style="grid-template-columns: 1fr;">
+        <div class="dropzone" id="dropCheck" tabindex="0" role="button" aria-label="Add the copy to check">
+          <span class="dropzone__label">The copy to check</span>
+          <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none"><path d="M12 15V3M12 3L7 8M12 3L17 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15V17.5C4 18.9 5.1 20 6.5 20H17.5C18.9 20 20 18.9 20 17.5V15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="dropzone__text">Drop the copy here, or click to browse</div>
+          <div class="dropzone__hint">The version you want to check</div>
+          <input type="file" id="fileCheck" aria-hidden="true">
+        </div>
+      </div>
+      <p class="field-error" id="errorCheck"></p>
+
+      <div class="form-grid" style="margin-top: 16px;">
+        <div class="field">
+          <label class="field__label" for="checkActor">Checked by</label>
+          <input type="text" id="checkActor" placeholder="Full name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="field__label" for="checkRole">Their role</label>
+          <select id="checkRole">
+            <option>Analyst</option>
+            <option>Collecting officer</option>
+            <option>Counsel</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="btn btn--primary" id="runCheckBtn" disabled>Check this copy</button>
+      </div>
+
+      <div id="checkResult" class="demo-result"></div>
+    </div>
+
+    <!-- Tamper demo -->
+    <div class="panel">
+      <div class="panel__head">
+        <div>
+          <div class="panel__title">Demonstration</div>
+          <p class="panel__sub">Prove the seal works, on this exhibit, right now.</p>
+        </div>
+      </div>
+
+      <div class="info-note">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 11V16M12 8V8.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <div>
+          The altered copy is made by changing <strong>a single byte</strong> of the sealed
+          file. Nothing else about it changes, and the sealed original is never touched.
+        </div>
+      </div>
+
+      <div class="demo-actions" style="margin-top: 18px;">
+        <button class="btn btn--secondary" id="demoHonestBtn">Check an honest copy</button>
+        <button class="btn btn--secondary" id="demoAlteredBtn">Check a changed copy</button>
+        <button class="btn btn--secondary" id="tamperDownloadBtn">Create a changed copy for demonstration</button>
+      </div>
+
+      <div id="demoResult" class="demo-result"></div>
+    </div>
+
+    <p class="limit-note" id="limitNote"></p>
+  </div>
+</main>
+
+<script>
+  window.CUSTODYCHAIN_API = window.CUSTODYCHAIN_API || "http://127.0.0.1:8000";
+</script>
+<script src="custody.js"></script>
+<script src="exhibit.js"></script>
+</body>
+</html>
